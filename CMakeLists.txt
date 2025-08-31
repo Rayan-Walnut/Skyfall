@@ -30,6 +30,7 @@ add_executable(Skyfall
   src/main.cpp
   src/Camera.cpp
   src/Player.cpp
+  src/Shader.cpp
 )
 
 target_include_directories(Skyfall PRIVATE
@@ -38,7 +39,7 @@ target_include_directories(Skyfall PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-target_link_libraries(Skyfall PRIVATE glfw)
+target_link_libraries(Skyfall PRIVATE glfw glad)
 
 if (MSVC)
   target_compile_definitions(Skyfall PRIVATE "GLFW_INCLUDE_NONE")
@@ -47,7 +48,7 @@ endif()
 target_compile_definitions(Skyfall PRIVATE GL_SILENCE_DEPRECATION)
 
 # Simple test target
-add_executable(tests tests/test_basic.cpp)
+add_executable(tests tests/test_basic.cpp tests/test_player.cpp)
 add_test(NAME basic_tests COMMAND tests)
 
 enable_testing()
