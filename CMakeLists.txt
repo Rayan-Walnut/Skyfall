@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
+cmake_policy(VERSION 3.14)
 project(Skyfall LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -35,11 +36,10 @@ add_executable(Skyfall
 
 target_include_directories(Skyfall PRIVATE
   ${glad_SOURCE_DIR}/include
-  ${glm_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-target_link_libraries(Skyfall PRIVATE glfw glad)
+target_link_libraries(Skyfall PRIVATE glfw glad glm::glm)
 
 if (MSVC)
   target_compile_definitions(Skyfall PRIVATE "GLFW_INCLUDE_NONE")
@@ -49,6 +49,7 @@ target_compile_definitions(Skyfall PRIVATE GL_SILENCE_DEPRECATION)
 
 # Simple test target
 add_executable(tests tests/test_basic.cpp tests/test_player.cpp)
+target_link_libraries(tests PRIVATE glm::glm)
 add_test(NAME basic_tests COMMAND tests)
 
 enable_testing()

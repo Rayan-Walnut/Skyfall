@@ -14,6 +14,8 @@ static int WINDOW_H = 720;
 bool started = false;
 Player player;
 Camera camera;
+static bool firstMouse = true;
+static double lastX = 0.0, lastY = 0.0;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -25,10 +27,23 @@ void processInput(GLFWwindow *window, float dt)
 {
     glm::vec3 move(0.0f);
     const float speed = 5.0f;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) move.z -= speed * dt;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) move.z += speed * dt;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) move.x -= speed * dt;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) move.x += speed * dt;
+    // Accept both QWERTY (W/A/S/D) and AZERTY (Z/Q/S/D)
+    bool fw = (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) || (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS);
+    bool bw = glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
+    bool left = (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) || (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS);
+    bool right = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
+
+    // camera-relative movement: compute forward/right from yaw
+    float yaw = camera.getYaw();
+    float yawRad = glm::radians(yaw);
+    glm::vec3 forward = glm::normalize(glm::vec3(sin(yawRad), 0.0f, cos(yawRad)));
+    // right vector: try cross(forward, up) to match expected left/right on different layouts
+    glm::vec3 rightVec = glm::normalize(glm::cross(forward, glm::vec3(0.0f,1.0f,0.0f)));
+
+    if (fw) move += forward * speed * dt;
+    if (bw) move -= forward * speed * dt;
+    if (left) move -= rightVec * speed * dt;
+    if (right) move += rightVec * speed * dt;
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) player.jump();
 
     // world-relative move (no rotation applied yet)
@@ -37,14 +52,30 @@ void processInput(GLFWwindow *window, float dt)
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
+    // start the game (capture cursor) on any left click to avoid tiny hitbox
     if (!started && button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        double mx, my; glfwGetCursorPos(window, &mx, &my);
-        // Start button area: bottom-right 200x80 pixels
-        // Note: GLFW cursor y is top-left origin in Windows, so convert
-        if (mx >= WINDOW_W - 220 && mx <= WINDOW_W - 20 && my >= WINDOW_H - 100 && my <= WINDOW_H - 20) {
-            started = true;
-        }
+        started = true;
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        firstMouse = true;
     }
+}
+
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    if (glfwGetInputMode(window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED) return;
+    if (firstMouse) {
+        lastX = xpos; lastY = ypos; firstMouse = false;
+        return;
+    }
+    double xoffset = xpos - lastX;
+    double yoffset = lastY - ypos; // reversed: y ranges top->bottom
+    lastX = xpos; lastY = ypos;
+
+    const float sensitivity = 0.1f;
+    // invert X so mouse-right produces positive yaw (fixes inverted horizontal look)
+    camera.addYawPitch((float)(-xoffset * sensitivity), (float)(yoffset * sensitivity));
+    // debug print to console so we can see the camera reacting
+    std::cout << "camera yaw=" << camera.getYaw() << " pitch=" << camera.getPitch() << "\n";
 }
 
 // simple shaders
@@ -75,6 +106,7 @@ int main() {
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetCursorPosCallback(window, cursor_position_callback);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -124,6 +156,11 @@ int main() {
     while(!glfwWindowShouldClose(window)) {
         double now = glfwGetTime();
         float dt = float(now - last); last = now;
+        // allow releasing the cursor with ESC
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            firstMouse = true;
+        }
 
         processInput(window, dt);
         player.update(dt);

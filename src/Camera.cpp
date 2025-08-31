@@ -29,3 +29,6 @@ void Camera::update(float /*dt*/) {
 
 void Camera::setYawPitch(float y, float p) { yaw = y; pitch = p; }
 void Camera::addYawPitch(float dyaw, float dpitch) { yaw += dyaw; pitch += dpitch; if (pitch > 89.0f) pitch = 89.0f; if (pitch < -89.0f) pitch = -89.0f; }
+
+float Camera::getYaw() const { return yaw; }
+float Camera::getPitch() const { return pitch; }

@@ -14,6 +14,10 @@ public:
     void setYawPitch(float yaw, float pitch);
     void addYawPitch(float dyaw, float dpitch);
 
+    // accessors for input handling
+    float getYaw() const;
+    float getPitch() const;
+
 private:
     glm::vec3 target;
     float distance;
