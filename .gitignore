@@ -1,0 +1,25 @@
+# Build
+/build/
+cmake-build-debug/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.exe
+*.obj
+*.pdb
+*.ilk
+
